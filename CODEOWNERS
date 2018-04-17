@@ -1,0 +1,28 @@
+#
+# N3 project code owners
+#
+# This file defines which teams own which part of the codebase. You must get
+# sign-off from the owner or owners before committing to master.
+#
+# The following teams are defined as owners:
+#   - @acquia/n3-api: The N3 API team (JIRA: N3)
+#
+# When using Github, the appropriate teams and people will be automatically
+# added to your pull request as reviewers.
+#
+# Notes:
+#   - You must use ** to indicate to Github that it should treat all files
+#     with in a path, recursively, as owned by a team or person.
+#   - To allow a team to be added as a reviewer, the repository must be added to
+#     that team's list of repositories and set to allow writes. Repositories can
+#     be added via the Repositories tab on the team's page in Github.
+#
+# @see https://help.github.com/articles/about-codeowners/
+#
+
+#
+# Default matching pattern
+#
+# Unless otherwise noted, new files are managed by the N3 API team.
+#
+*    @acquia/n3-api

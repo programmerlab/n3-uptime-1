@@ -1,0 +1,30 @@
+{
+    "name": "acquia/n3-uptime",
+    "description": "Update this description.",
+    "license": "proprietary",
+    "homepage": "https://github.com/acquia/n3-uptime",
+    "authors": [
+        {
+            "name": "The N3 API Team",
+            "email": "n3-api@acquia.com",
+            "homepage": "https://confluence.acquia.com/display/AN/Acquia+Network+Home"
+        }
+    ],
+    "require": {
+        "php": "~5.6 || ~7.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~5.7.0",
+        "friendsofphp/php-cs-fixer": "^2.11"
+    },
+    "autoload": {
+        "psr-4": {
+            "Acquia\\N3\\Uptime\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Acquia\\N3\\Uptime\\Test\\": "tests/"
+        }
+    }
+}

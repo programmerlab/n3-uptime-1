@@ -1,0 +1,19 @@
+#
+# N3 project gitignore file
+#
+# @see https://git-scm.com/docs/gitignore
+#
+
+# Ignore build artifacts
+/dist/
+
+# Ignore Composer dependencies
+/vendor/
+
+# Ignore local PHPUnit configuration
+/phpunit.xml
+
+# Ignore PHP-CS-Fixer files
+/.php_cs
+/.php_cs.cache
+/cs_fixer_tmp_*
