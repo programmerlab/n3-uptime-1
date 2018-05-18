@@ -8,6 +8,8 @@
 
 $finder = PhpCsFixer\Finder::create()
     ->in([
+        __DIR__ . '/bin',
+        __DIR__ . '/docroot',
         __DIR__ . '/src',
         __DIR__ . '/tests',
     ]);
@@ -16,24 +18,49 @@ $config = PhpCsFixer\Config::create()
     ->setRiskyAllowed(true)
     ->setRules([
         '@PSR2' => true,
+        'align_multiline_comment' => true,
         'array_indentation' => true,
         'array_syntax' => [
             'syntax' => 'short',
         ],
+        'blank_line_after_opening_tag' => true,
+        'blank_line_before_statement' => [
+            'statements' => ['exit', 'if', 'declare', 'return', 'try', 'throw'],
+        ],
+        'binary_operator_spaces' => [
+            'default' => 'align',
+        ],
+        'cast_spaces' => [
+            'space' => 'single',
+        ],
         'concat_space' => [
             'spacing' => 'one',
         ],
+        'combine_consecutive_issets' => true,
+        'combine_consecutive_unsets' => true,
+        'declare_strict_types' => true, // Remove if project needs to support PHP 5.6
+        'dir_constant' => true,
         'method_chaining_indentation' => true,
-        'phpdoc_indent' => true,
+        'multiline_comment_opening_closing' => true,
         'no_unused_imports' => true,
         'no_blank_lines_after_class_opening' => true,
         'no_blank_lines_after_phpdoc' => true,
         'no_whitespace_before_comma_in_array' => true,
         'no_whitespace_in_blank_line' => true,
         'php_unit_namespaced' => true,
+        'phpdoc_scalar' => true,
+        'phpdoc_order' => true,
         'psr4' => true,
+        'return_type_declaration' => [
+            'space_before' => 'none',
+        ],
+        'single_blank_line_before_namespace' => true,
+        'single_quote' => [
+            'strings_containing_single_quote_chars' => true,
+        ],
         'short_scalar_cast' => true,
         'trailing_comma_in_multiline_array' => true,
+        'trim_array_spaces' => true,
     ])
     ->setFinder($finder);
 
