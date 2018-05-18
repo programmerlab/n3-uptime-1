@@ -1,0 +1,22 @@
+#
+# CloudFormation parameters configuration
+#
+#
+# The two availability zones that Hermes should launch into.
+#
+# @todo AvailabilityZone2 is ignored.
+# @see https://backlog.acquia.com/browse/N3-2993
+#
+
+ArtifactBucket: "n3uptime-bucket"
+
+DesiredCapacity: "2"
+
+#
+# The two availability zones that N3Uptime should launch into.
+#
+# @todo AvailabilityZone2 is ignored.
+# @see https://backlog.acquia.com/browse/N3-1653
+#
+AvailabilityZone1: us-east-1a
+AvailabilityZone2: us-east-1b

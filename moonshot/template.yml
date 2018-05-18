@@ -1,0 +1,313 @@
+---
+#
+# N3 Uptime CloudFormation template
+#
+# This defines the infrastructure used to create a N3 Uptime stack. Stack creation
+# itself is handled via a deployment tool, Moonshot.
+#
+# @see https://github.com/acquia/moonshot
+# @see https://github.com/acquia/n3-uptime/tree/master/doc
+#
+Description: CloudFormation template for Hermes, the N3 notification system.
+
+#
+# AWSTemplateFormatVersion
+#
+# The version of the schema used for CloudFormation. This should virtually never
+# need to change.
+#
+AWSTemplateFormatVersion: '2010-09-09'
+
+#
+# Functions
+#
+# Template values can be dynamically calculated via the use of functions.
+#
+# @see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference.html
+#
+# Common functions used in this template:
+#
+# - 'Fn::GetAtt': [ 'ResourceName', 'PropertyName' ]
+#   Similar to Ref, this replaces the current value with the value of a property
+#   either defined within the template or by Amazon itself.
+#
+# - 'Fn::FindInMap': [ 'MappingName', 'KeyName', 'PropertyName' ]
+#   Replaces the current value with the value found within a mapping, defined
+#   later within the mappings section. This allows dynamically changing the
+#   value based on the stack's environment, like which account or region it's
+#   launched in.
+#
+# - 'Fn::Sub': 'String'
+#    Replaces a tokenized string with a dynamically-generated value, similar to
+#    PHP's strtr(). Tokens are defined as ${ResourceName}, which works like Ref
+#    above, or ${ResourceName.PropertyName}, which works like Fn::GetAtt above.
+#
+# Note: the Ruby AWS SDK does not support short form functions correctly at this
+# time, causing Moonshot to generate incorrect changesets when used. Long form
+# functions must be used until this is fixed.
+#
+
+
+#
+# Parameters
+#
+# Parameters are a way to pass external values to the template.
+#
+# Using Moonshot, parameters are supplied via an answers file (an example can be
+# found in /moonshot/config/answers-example.yml) or interactively when creating
+# a stack.
+#
+# Moonshot will attempt to use existing values whenever possible. In practice,
+# this means you do not need to supply parameters via an answers file when
+# updating a stack unless you want to change the existing values.
+#
+
+Parameters:
+  ArtifactBucket:
+    Type: String
+    Default: n3uptime-bucket
+    Description: The S3 bucket that contains the build artifacts that CodeDeploy will deploy.
+  AvailabilityZone1:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-east-1d
+  AvailabilityZone2:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-east-1b
+  DesiredCapacity:
+    Type: Number
+    Default: '2'
+    Description: The desired number of EC2 instances used for the application.
+Outputs:
+  URL:
+    Description: The application's URL
+    Value:
+      Fn::Join:
+      - ''
+      - - http://
+        - Fn::GetAtt:
+          - LoadBalancer
+          - DNSName
+Mappings:
+  RegionMap:
+    us-east-1:
+      AMI: ami-43a15f3e
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.176.0.0/16
+      Tags:
+      - Key: Name
+        Value:
+          Ref: AWS::StackName
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Ref: InternetGateway
+      VpcId:
+        Ref: VPC
+  SubnetZone1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Ref: AvailabilityZone1
+      CidrBlock: 10.176.10.0/26
+      VpcId:
+        Ref: VPC
+  SubnetZone2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Ref: AvailabilityZone2
+      CidrBlock: 10.176.10.64/26
+      VpcId:
+        Ref: VPC
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+  Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: InternetGateway
+  SubnetRouteTableAssociationZone1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteTable
+      SubnetId:
+        Ref: SubnetZone1
+  SubnetRouteTableAssociationZone2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteTable
+      SubnetId:
+        Ref: SubnetZone2
+  SecurityGroupElb:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId:
+        Ref: VPC
+      GroupDescription: SecurityGroupN3UptimeElb
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: 0.0.0.0/0
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Listeners:
+      - InstancePort: '80'
+        LoadBalancerPort: '80'
+        Protocol: HTTP
+      CrossZone: true
+      ConnectionDrainingPolicy:
+        Enabled: true
+        Timeout: 15
+      Scheme: internet-facing
+      SecurityGroups:
+      - Ref: SecurityGroupElb
+      HealthCheck:
+        HealthyThreshold: '3'
+        Interval: '15'
+        Target: 'HTTP:80/'
+        Timeout: '5'
+        UnhealthyThreshold: '3'
+      Subnets:
+      - Ref: SubnetZone1
+      - Ref: SubnetZone2
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+      - PolicyName: ArtifactAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:GetObject
+            Resource:
+              Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - Ref: ArtifactBucket
+                - "/*"
+      - PolicyName: ElbAutoDrainAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - elasticloadbalancing:Describe*
+            - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+            - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+            - autoscaling:Describe*
+            - autoscaling:EnterStandby
+            - autoscaling:ExitStandby
+            - autoscaling:UpdateAutoScalingGroup
+            Resource: "*"
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - Ref: Role
+  N3UptimeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId:
+        Ref: VPC
+      GroupDescription: SecurityGroup for N3 Uptime
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '80'
+        SourceSecurityGroupId:
+          Ref: SecurityGroupElb
+      SecurityGroupEgress:
+      - IpProtocol: "-1"
+        FromPort: "-1"
+        ToPort: "-1"
+        CidrIp: 0.0.0.0/0
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      AssociatePublicIpAddress: true
+      ImageId:
+        Fn::FindInMap:
+        - RegionMap
+        - Ref: AWS::Region
+        - AMI
+      IamInstanceProfile:
+        Ref: InstanceProfile
+      InstanceType: t2.micro
+      SecurityGroups:
+      - Ref: N3UptimeSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: '/dev/sda1'
+          Ebs:
+            VolumeSize: 40
+      KeyName: n3uptime
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - "\n"
+          - - "#!/bin/bash -v"
+            - sudo apt-get -y update
+            - sudo apt-get -y install curl ntp python-pip python-setuptools python zip apache2 ruby
+            - curl https://aws-codedeploy-us-east-1.s3.amazonaws.com/latest/install > /tmp/install.sh
+            - chmod +x /tmp/install.sh
+            - sudo /tmp/install.sh auto
+            - rm /tmp/install.sh
+            - sudo service apache2 restart
+            - sudo service codedeploy-agent restart
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn:
+    - VPCGatewayAttachment
+    Properties:
+      AvailabilityZones:
+      - Ref: AvailabilityZone1
+      - Ref: AvailabilityZone2
+      DesiredCapacity:
+        Ref: DesiredCapacity
+      HealthCheckGracePeriod: '900'
+      HealthCheckType: ELB
+      LaunchConfigurationName:
+        Ref: LaunchConfiguration
+      LoadBalancerNames:
+      - Ref: LoadBalancer
+      MaxSize: 5
+      MinSize:
+        Ref: DesiredCapacity
+      TerminationPolicies:
+      - OldestLaunchConfiguration
+      VPCZoneIdentifier:
+      - Ref: SubnetZone1
+      - Ref: SubnetZone2
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: '1'
+        MinInstancesInService:
+          Ref: DesiredCapacity

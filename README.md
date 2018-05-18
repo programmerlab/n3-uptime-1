@@ -1,12 +1,8 @@
 # N3 Uptime
 
-Replace this sentence with a 1–2 line description of what this project does.
+N3 Uptime is a tool that regularly checks the health and availability of the servers.
 
-## Prerequisites
-
-If there are any preconditions for installing or using this project, they should be listed here. Otherwise, remove this section.
-
-## Installation
+## Set up initial environment
 
 N3 Uptime can be included via [Composer](https://getcomposer.org):
 
@@ -24,11 +20,54 @@ N3 Uptime can be included via [Composer](https://getcomposer.org):
 }
 ```
 
+## Requirements
+    
+You will need the following software to develop, deploy, and maintain N3-Uptime:
+
+    PHP 7.1 or higher
+    Composer
+    Curl
+    AWS CLI
+    Ruby 2.3 or higher
+
+
+## Installation and usage
+
+    make install
+
+ 
 ## Usage
 
-Describe how to invoke this library here, including code samples for common operations. If needed, use subsections to describe less common usages of the library.
+You can now deploy your software to a new stack with:
+
+    $ bundle exec moonshot create
+
+By default, create launches the stack and deploys code. If you want to only create the stack and not deploy code, use:
+
+    $ bundle exec moonshot create --no-deploy
+    
+If you make changes to your application and want to release a development build to your stack, run:
+
+    $ bundle exec moonshot push
+    
+To build a "named build" for releasing through test and production environments, use:
+
+    $ bundle exec moonshot build v0.1.0
+    $ bundle exec moonshot deploy v0.1.0 -n <environment-name>
+    
+To see the outputs of the stack you just spun up:
+
+    $ bundle exec moonshot status
+    
+Tear down your stack by running the following command:
+
+    $ bundle exec moonshot delete
+    
+SSH into the first instance in your stack by running the following command:
+
+    $ bundle exec moonshot ssh
 
 ## Additional information
 
 * [N3 API issue backlog (for bug reports and feature requests)](https://backlog.acquia.com/projects/N3)
-* Add additional related links here (e.g. links to the RFC or epic defining this library's specification)
+* [Working with Moonshot-powered services on N3](https://confluence.acquia.com/pages/viewpage.action?spaceKey=AN&title=Working+with+Moonshot-powered+services+on+N3)

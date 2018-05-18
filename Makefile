@@ -24,4 +24,3 @@ update:
 
 format: install
 	./vendor/bin/php-cs-fixer fix -v
-

@@ -9,6 +9,7 @@
 
 # Ignore Composer dependencies
 /vendor/
+/composer.lock
 
 # Ignore local PHPUnit configuration
 /phpunit.xml
