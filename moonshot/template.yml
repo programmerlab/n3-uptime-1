@@ -8,7 +8,7 @@
 # @see https://github.com/acquia/moonshot
 # @see https://github.com/acquia/n3-uptime/tree/master/doc
 #
-Description: CloudFormation template for Hermes, the N3 notification system.
+Description: CloudFormation template for N3 Uptime, the N3 notification system.
 
 #
 # AWSTemplateFormatVersion
@@ -77,16 +77,55 @@ Parameters:
     Type: Number
     Default: '2'
     Description: The desired number of EC2 instances used for the application.
+  # Domian name prefix  
+  DomainNamePrefix:
+    Description: The domain name prefix that will be assigned to stack resources (e.g. https://uptime-DomainNamePrefix.n3.dev.cloudservices.acquia.io)
+    Type: String
+    Default: dev
+
+  DomainHostedZone:
+    Description: The FQDN that will be assigned to stack resources (e.g. https://uptime-dev.n3.DomainHostedZone)
+    Type: String
+    Default: dev.cloudservices.acquia.io
+    AllowedValues:
+      # Development value
+      - dev.cloudservices.acquia.io
+      # Production value
+      - cloudservices.acquia.io
+
+  Environment:
+    Description: The short name of the environment associated with the stack. Deprecated.
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - stg
+      - prod
+      - scrubbed
+
+  RemoteAccessCidr:
+    Description: The IPv4 CIDR to allow remote SSH access to Uptime proxy instances.
+    Type: String
+    Default: 0.0.0.0/0
+    AllowedPattern: '^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$'
+    ConstraintDescription: The value provided is not a valid IPv4 CIDR.
+#
+# Outputs
+#
+# Outputs are values that represent the results of the stack formation. They can
+# be used in other CloudFormation stacks or be purely informational.
+#
+# You can view the current output values for an existing stack using Moonshot:
+#
+#     $ bundle exec moonshot status --environment=$STACKNAME
+#
 Outputs:
-  URL:
-    Description: The application's URL
+
+  UptimeURL:
+    Description: The URL of the N3 Uptime proxy load balancer.
     Value:
-      Fn::Join:
-      - ''
-      - - http://
-        - Fn::GetAtt:
-          - LoadBalancer
-          - DNSName
+      'Fn::Sub': 'https://uptime-${DomainNamePrefix}.n3.${DomainHostedZone}'
+
 Mappings:
   RegionMap:
     us-east-1:
@@ -100,8 +139,95 @@ Resources:
       - Key: Name
         Value:
           Ref: AWS::StackName
+  #
+  # Defines the route table for the Uptime VPC.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route-table.html
+  # @see http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Route_Tables.html
+  #
+  RouteTableProxy:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: 
+        Ref: VPC
+  #
+  # Defines the subnet for Uptime to exist within the first availability zone (AZ).
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
+  #
+  SubnetUptimeProxyZoneA:
+    Type: AWS::EC2::Subnet
+    DependsOn: SecurityGroupN3UptimeProxy
+    Properties:
+      CidrBlock: 10.176.10.0/26 
+      AvailabilityZone:
+        Ref: AvailabilityZone1
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value:
+            Ref: AWS::StackName
+  #
+  # Associates the subnet for the first AZ defined above to the VPC and its route table.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet-route-table-assoc.html
+  #
+  SubnetRouteTableAssociationUptimeZoneA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+      - RouteTableProxy
+      - SubnetUptimeProxyZoneA
+    Properties:
+      RouteTableId:
+          Ref: RouteTableProxy
+      SubnetId:
+        Ref: SubnetUptimeProxyZoneA
+  #
+  # Defines the subnet for Uptime to exist within the second AZ.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet.html
+  # 
+
+  SubnetUptimeProxyZoneB:
+    Type: AWS::EC2::Subnet
+    DependsOn: SecurityGroupN3UptimeProxy
+    Properties:
+      AvailabilityZone:
+        Ref: AvailabilityZone2
+      CidrBlock: 10.176.10.64/26
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: 
+            Ref: AWS::StackName
+
+  #
+  # Associates the subnet for the second AZ defined above to the VPC and its route table.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet-route-table-assoc.html
+  #
+  
+  SubnetRouteTableAssociationUptimeZoneB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+      - RouteTableProxy
+      - SubnetUptimeProxyZoneB
+    Properties:
+      RouteTableId:
+        Ref: RouteTableProxy
+      SubnetId: 
+        Ref: SubnetUptimeProxyZoneB
+
   InternetGateway:
     Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: 
+            Ref: AWS::StackName
+
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -109,22 +235,133 @@ Resources:
         Ref: InternetGateway
       VpcId:
         Ref: VPC
-  SubnetZone1:
-    Type: AWS::EC2::Subnet
+  #
+  # Creates a route between the internet gateway and the VPC's route table.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-route.html
+  #
+  route1:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
     Properties:
-      AvailabilityZone:
-        Ref: AvailabilityZone1
-      CidrBlock: 10.176.10.0/26
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: 
+        Ref: RouteTableProxy
+      GatewayId:
+          Ref: InternetGateway
+  #
+  # Defines the DHCP options for the Uptime VPC.
+  #
+  # DHCP dynamically allocates IP addresses to resources within the Uptime stack.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-dhcp-options.html
+  #
+  DHCPOptions:
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainName: ec2.internal
+      DomainNameServers:
+        - AmazonProvidedDNS
+  #
+  # Associates the DHCP options defined above to the VPC.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc-dhcp-options-assoc.html
+  #
+  DHCPOptionsAssociationVPC:
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
       VpcId:
         Ref: VPC
-  SubnetZone2:
-    Type: AWS::EC2::Subnet
+      DhcpOptionsId:
+        Ref: DHCPOptions
+  #
+  # Security and ACL resources
+  #
+  # These resources define the level of access the external world has to the
+  # resources and networks within the stack. For example, these resources define
+  # the ports and IP subnets resources within the stack will respond to.
+  #
+  # @see http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html
+  # @see http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_ACLs.html
+  #
+
+  #
+  # Defines the access control list for the Uptime stack's network.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-network-acl.html
+  #
+  NetworkAclN3UptimeProxy:
+    Type: AWS::EC2::NetworkAcl
     Properties:
-      AvailabilityZone:
-        Ref: AvailabilityZone2
-      CidrBlock: 10.176.10.64/26
-      VpcId:
+      VpcId: 
         Ref: VPC
+
+  #
+  # Defines the outbound network ACL rules for the Uptime stack.
+  #
+  # Effectively, all outbound network traffic is allowed.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-network-acl-entry.html
+  #
+  OutboundNetworkAclN3UptimeProxy:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: 
+        Ref: NetworkAclN3UptimeProxy
+      Protocol: '-1' # -1 = all protocols
+      RuleAction: allow
+      RuleNumber: 100 # arbitrary rule weight
+
+  #
+  # Defines the inbound network ACL rules for the Uptime stack.
+  #
+  # Effectively, all inbound network traffic is allowed. Access to specific
+  # resources is defined at the application level via security groups instead.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-network-acl-entry.html
+  #
+  InboundNetworkAclN3UptimeProxy:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      NetworkAclId: 
+        Ref: NetworkAclN3UptimeProxy
+      Protocol: '-1' # -1 = all protocols
+      RuleAction: allow
+      RuleNumber: 100 # arbitrary rule weight
+  #
+  # Associates the network ACL defined above with the first AZ's subnet.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet-network-acl-assoc.html
+  #
+  SubnetANetworkAclAssociationN3UptimeProxy:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    DependsOn:
+      - NetworkAclN3UptimeProxy
+      - SubnetUptimeProxyZoneA
+    Properties:
+      NetworkAclId: 
+        Ref: NetworkAclN3UptimeProxy
+      SubnetId:
+        Ref: SubnetUptimeProxyZoneA
+  #
+  # Associates the network ACL defined above with the first AZ's subnet.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet-network-acl-assoc.html
+  #
+  SubnetBNetworkAclAssociationN3UptimeProxy:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    DependsOn:
+      - NetworkAclN3UptimeProxy
+      - SubnetUptimeProxyZoneB
+    Properties:
+      NetworkAclId:
+        Ref: NetworkAclN3UptimeProxy
+      SubnetId: 
+        Ref: SubnetUptimeProxyZoneB
+
   RouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -138,21 +375,56 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId:
         Ref: InternetGateway
-  SubnetRouteTableAssociationZone1:
-    Type: AWS::EC2::SubnetRouteTableAssociation
+  #
+  # DNS resources
+  #
+  # These resources define DNS records for the Uptime stack using Route 53.
+  #
+  #
+  # Defines a zone for Uptime's domains.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-route53-hostedzone.html
+  # @deprecated We're not using this at all.
+  #
+  HostedZoneUptimeProxy:
+    Type: AWS::Route53::HostedZone
     Properties:
-      RouteTableId:
-        Ref: RouteTable
-      SubnetId:
-        Ref: SubnetZone1
-  SubnetRouteTableAssociationZone2:
-    Type: AWS::EC2::SubnetRouteTableAssociation
+      Name: internal
+      VPCs:
+        - VPCId: 
+            Ref: VPC
+          VPCRegion:
+            Ref: AWS::Region
+  #
+  # Defines the main DNS record set for the Uptime stack.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-recordsetgroup.html
+  #
+  RecordSetGroupUptimeProxy:
+    Type: AWS::Route53::RecordSetGroup
     Properties:
-      RouteTableId:
-        Ref: RouteTable
-      SubnetId:
-        Ref: SubnetZone2
-  SecurityGroupElb:
+      HostedZoneName:
+        'Fn::Sub': '${DomainHostedZone}.'
+      RecordSets:
+        # Uptime proxy ELB  
+        - Name:
+            'Fn::Sub': 'uptime-${DomainNamePrefix}.n3.${DomainHostedZone}.'
+          Type: A
+          AliasTarget:
+            HostedZoneId:
+              'Fn::GetAtt': [ LoadBalancer, CanonicalHostedZoneNameID ]
+            DNSName:
+              'Fn::GetAtt': [ LoadBalancer, CanonicalHostedZoneName ]
+
+  #
+  # Defines the access rules, at an application level, for the Uptime load balancer.
+  #
+  # Effectively allows all outbound traffic, but only allows inbound HTTPS
+  # traffic.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html
+  #
+  SecurityGroupN3UptimeProxyELB:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId:
@@ -160,23 +432,28 @@ Resources:
       GroupDescription: SecurityGroupN3UptimeElb
       SecurityGroupIngress:
       - IpProtocol: tcp
-        FromPort: '80'
-        ToPort: '80'
+        FromPort: 443
+        ToPort: 443
         CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1 # -1 = Access on all ports and protocols
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
   LoadBalancer:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       Listeners:
-      - InstancePort: '80'
-        LoadBalancerPort: '80'
-        Protocol: HTTP
+      - InstancePort: 443
+        LoadBalancerPort: 443
+        Protocol: HTTPS
       CrossZone: true
       ConnectionDrainingPolicy:
         Enabled: true
         Timeout: 15
       Scheme: internet-facing
       SecurityGroups:
-      - Ref: SecurityGroupElb
+      - Ref: SecurityGroupN3UptimeProxyELB
       HealthCheck:
         HealthyThreshold: '3'
         Interval: '15'
@@ -184,8 +461,8 @@ Resources:
         Timeout: '5'
         UnhealthyThreshold: '3'
       Subnets:
-      - Ref: SubnetZone1
-      - Ref: SubnetZone2
+      - Ref: SubnetUptimeProxyZoneA
+      - Ref: SubnetUptimeProxyZoneB
   Role:
     Type: AWS::IAM::Role
     Properties:
@@ -233,23 +510,38 @@ Resources:
       Path: "/"
       Roles:
       - Ref: Role
-  N3UptimeSecurityGroup:
+
+  #
+  # Defines the access rules, at an application level, for the Hermes EC2 instances.
+  #
+  # Effectively allows all outbound traffic, but only allows inbound SSH
+  # traffic. The EC2 instances will receive inbound HTTP(S) traffic from the
+  # load balancer.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html
+  #
+  SecurityGroupN3UptimeProxy:
     Type: AWS::EC2::SecurityGroup
     Properties:
+      GroupDescription: 'Uptime proxy security group'
       VpcId:
         Ref: VPC
-      GroupDescription: SecurityGroup for N3 Uptime
       SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: '22'
-        ToPort: '80'
-        SourceSecurityGroupId:
-          Ref: SecurityGroupElb
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId:
+            Ref: SecurityGroupN3UptimeProxyELB
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp:
+            Ref: RemoteAccessCidr
       SecurityGroupEgress:
       - IpProtocol: "-1"
         FromPort: "-1"
         ToPort: "-1"
-        CidrIp: 0.0.0.0/0
+        CidrIp: 0.0.0.0/0 
   LaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
@@ -263,7 +555,7 @@ Resources:
         Ref: InstanceProfile
       InstanceType: t2.micro
       SecurityGroups:
-      - Ref: N3UptimeSecurityGroup
+      - Ref: SecurityGroupN3UptimeProxy
       BlockDeviceMappings:
         - DeviceName: '/dev/sda1'
           Ebs:
@@ -282,6 +574,24 @@ Resources:
             - rm /tmp/install.sh
             - sudo service apache2 restart
             - sudo service codedeploy-agent restart
+
+  #
+  # Auto-scaling application resources
+  #
+  # These resources define how resources that scale based on usage are created
+  # and destroyed.
+  #
+  # The primary mechanism for this is an auto-scaling group that defines the
+  # upper and lower bounds of the pool of resources. Additional policies define
+  # the conditions under which the pool is enlarged or shrunk, and alarms
+  # provide the data evaluated by the auto-scaling policies.
+  #
+
+  #
+  # Defines the auto-scaling group for the EC2 instances making up the Hermes proxy.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-as-group.html
+  #
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     DependsOn:
@@ -304,8 +614,8 @@ Resources:
       TerminationPolicies:
       - OldestLaunchConfiguration
       VPCZoneIdentifier:
-      - Ref: SubnetZone1
-      - Ref: SubnetZone2
+      - Ref: SubnetUptimeProxyZoneA
+      - Ref: SubnetUptimeProxyZoneB
     UpdatePolicy:
       AutoScalingRollingUpdate:
         MaxBatchSize: '1'
