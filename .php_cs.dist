@@ -28,7 +28,7 @@ $config = PhpCsFixer\Config::create()
             'statements' => ['exit', 'if', 'declare', 'return', 'try', 'throw'],
         ],
         'binary_operator_spaces' => [
-            'default' => 'align',
+            'default' => 'align_single_space',
         ],
         'cast_spaces' => [
             'space' => 'single',
@@ -47,6 +47,9 @@ $config = PhpCsFixer\Config::create()
         'no_blank_lines_after_phpdoc' => true,
         'no_whitespace_before_comma_in_array' => true,
         'no_whitespace_in_blank_line' => true,
+        'ordered_imports' => [
+            'sortAlgorithm' => 'alpha',
+        ],
         'php_unit_namespaced' => true,
         'phpdoc_scalar' => true,
         'phpdoc_order' => true,
