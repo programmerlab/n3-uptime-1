@@ -77,6 +77,14 @@ Parameters:
     Type: Number
     Default: '2'
     Description: The desired number of EC2 instances used for the application.
+  DBInstanceId:
+    Type: String
+    Default: 'n3-uptime-rds'
+    Description: Database Instance Identifier
+  DBMasterPassword:
+    NoEcho: true
+    Type: String
+    Description: Database master password
   # Domian name prefix  
   DomainNamePrefix:
     Description: The domain name prefix that will be assigned to stack resources (e.g. https://uptime-DomainNamePrefix.n3.dev.cloudservices.acquia.io)
@@ -440,14 +448,55 @@ Resources:
           FromPort: -1
           ToPort: -1
           CidrIp: 0.0.0.0/0
+  N3UptimeDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId:
+        Ref: VPC
+      GroupDescription: SecurityGroup for N3 Uptime Database
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '3306'
+        ToPort: '3306'
+        CidrIp: 10.176.0.0/16
+      SecurityGroupEgress:
+      - IpProtocol: "-1"
+        FromPort: "-1"
+        ToPort: "-1"
+        CidrIp: 0.0.0.0/0
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: "RDS Subnet Group "
+      SubnetIds:
+      - Ref: SubnetUptimeProxyZoneA
+      - Ref: SubnetUptimeProxyZoneB
+  DatabaseInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBName: n3uptime
+      Engine: MySQL
+      MasterUsername: n3uptime
+      MasterUserPassword:
+        Ref: DBMasterPassword
+      DBInstanceIdentifier: 
+        Ref: DBInstanceId
+      DBInstanceClass: db.m1.small
+      DBSubnetGroupName:
+        Ref: DatabaseSubnetGroup
+      AllocatedStorage: '5'
+      BackupRetentionPeriod: '15'
+      VPCSecurityGroups:
+      - Ref: N3UptimeDBSecurityGroup
   LoadBalancer:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       Listeners:
-      - InstancePort: 443
-        LoadBalancerPort: 443
+      - LoadBalancerPort: '443'
         Protocol: HTTPS
-      CrossZone: true
+        InstancePort: '443'
+        InstanceProtocol: HTTPS
+        SSLCertificateId: arn:aws:acm:us-east-1:672327909798:certificate/892c0c83-1304-45ee-9f9e-cda1ddfa429c
       ConnectionDrainingPolicy:
         Enabled: true
         Timeout: 15
@@ -457,7 +506,7 @@ Resources:
       HealthCheck:
         HealthyThreshold: '3'
         Interval: '15'
-        Target: 'HTTP:80/'
+        Target: 'HTTPS:443/'
         Timeout: '5'
         UnhealthyThreshold: '3'
       Subnets:
@@ -528,8 +577,8 @@ Resources:
         Ref: VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+          FromPort: 443
+          ToPort: 443
           SourceSecurityGroupId:
             Ref: SecurityGroupN3UptimeProxyELB
         - IpProtocol: tcp

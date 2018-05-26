@@ -20,3 +20,8 @@ DesiredCapacity: "2"
 #
 AvailabilityZone1: us-east-1a
 AvailabilityZone2: us-east-1b
+
+#
+# Database default instance identifier ID
+#
+DBInstanceId: 'n3-uptime-rds'
