@@ -591,6 +591,114 @@ Resources:
         FromPort: "-1"
         ToPort: "-1"
         CidrIp: 0.0.0.0/0 
+
+  #
+  # Define the AWS::RDS::DBSubnetGroup type creates an RDS database subnet group. 
+  # Subnet groups must contain at least two subnets in two different Availability Zones in the same region. 
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
+  # 
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Dev DB subent groups
+      SubnetIds:
+        - Ref: SubnetUptimeProxyZoneA
+        - Ref: SubnetUptimeProxyZoneB
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Join:
+          - ''
+          - - PROJECT_NAME-
+            - Ref: EnvironmentName
+            - "-db"
+  #
+  # Defines the resource creates a cluster, such as an Aurora for Amazon RDS (Amazon Aurora) DB cluster.
+  # Aurora is a fully managed, MySQL-compatible, relational database engine
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbcluster.html
+  #
+  RDSCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      MasterUsername: n3uptime
+      MasterUserPassword: n3uptime#1!$
+      Engine: aurora
+      DBSubnetGroupName:
+        Ref: DBSubnetGroup
+      DBClusterParameterGroupName:
+        Ref: RDSDBClusterParameterGroup 
+  
+  RDSDBInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBSubnetGroupName:
+        Ref: DBSubnetGroup
+      DBParameterGroupName:
+        Ref: RDSDBParameterGroup
+      Engine: aurora
+      DBClusterIdentifier:
+        Ref: RDSCluster
+      DBInstanceIdentifier: "n3uptime-rds-v1-aurora"
+      AvailabilityZone:
+        Fn::GetAtt:
+        - SubnetUptimeProxyZoneA
+        - AvailabilityZone
+      DBInstanceClass: db.t2.small
+   
+  RDSDBInstance2:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBSubnetGroupName:
+        Ref: DBSubnetGroup
+      DBParameterGroupName:
+        Ref: RDSDBParameterGroup
+      Engine: aurora
+      DBClusterIdentifier:
+        Ref: RDSCluster
+      DBInstanceIdentifier: "n3uptime-rds-v2-aurora"
+      AvailabilityZone:
+        Fn::GetAtt:
+        - SubnetUptimeProxyZoneB
+        - AvailabilityZone
+      DBInstanceClass: db.t2.small
+  #
+  # Defines the resource creates a new Amazon Relational Database Service (Amazon RDS) database (DB) cluster parameter group.
+  # Applying a parameter group to a DB cluster might require instances to reboot, resulting in a database outage while the instances reboot.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbclusterparametergroup.html
+  #
+  RDSDBClusterParameterGroup:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Description: CloudFormation Aurora Cluster Parameter Group
+      Family: aurora5.6
+      Parameters:
+        time_zone: US/Eastern
+  #
+  # Defines the custom parameter group for an RDS database family.
+  # A default DB parameter group is created if you create a DB instance without specifying a customer-created DB parameter group
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-rds-dbparametergroup.html
+  #
+  RDSDBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: CloudFormation Sample Aurora Parameter Group
+      Family: aurora5.6
+      Parameters:
+        sql_mode: IGNORE_SPACE  
+  #
+  # Defines the launch configuration of N3 Uptime EC2 instances.
+  #
+  # Because EC2 instances are launched and terminated based on usage, we don't
+  # define EC2 instances directly. Instead, the launch configuration acts as a
+  # template for how new EC2 instances should be created when the auto-scaling
+  # group increases its pool.
+  #
+  # @see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-as-launchconfig.html
+  #      
   LaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
