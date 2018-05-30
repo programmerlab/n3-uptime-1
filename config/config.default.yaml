@@ -1,0 +1,69 @@
+#
+# N3 Demo default configuration
+#
+# You should not edit this file. If you need to override any of these values,
+# create a new file, "config.local.yaml", in this directory.
+#
+
+config:
+
+    #
+    # Application name.
+    #
+    name:
+        type: scalar
+        data: n3-uptime
+
+    #
+    # Environment name.
+    #
+    environment:
+        type: scalar
+        data: local
+
+    #
+    # The current API version.
+    #
+    version:
+        type: scalar
+        data: 1
+
+    #
+    # Enable debug mode.
+    #
+    # Debug mode will increase logging in the application, exposing all log
+    # severities.
+    #
+    debug:
+        type: scalar
+        data: true
+
+    #
+    # The database configuration.
+    #
+    # This is required, and should be provided by a local configuration file.
+    #
+    database:
+        type: variable
+        data:
+            dsn: ~
+            user: ~
+            password: ~
+
+    #
+    # Enable Bugsnag.
+    #
+    #
+    bugsnag.enabled:
+        type: scalar
+        data: false
+
+    #
+    # Bugsnag API key.
+    #
+    # This is required if Bugsnag is enabled.
+    #
+    #
+    bugsnag.key:
+        type: scalar
+        data: ~

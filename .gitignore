@@ -18,4 +18,3 @@
 /.php_cs
 /.php_cs.cache
 /cs_fixer_tmp_*
-/composer.lock

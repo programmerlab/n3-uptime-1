@@ -2,40 +2,85 @@
 
 declare(strict_types=1);
 
-use App\Kernel;
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use Acquia\N3\Configuration\Provider\ConfigurationDefinitionProvider;
+use Acquia\N3\Framework\Application\Http\JsonServerRequestFactory;
+use Acquia\N3\Framework\Application\Http\Kernel;
+use Acquia\N3\Framework\Infrastructure\Command\Provider\CommandBusProvider;
+use Acquia\N3\Framework\Infrastructure\Command\Provider\CommandHandlerProvider;
+use Acquia\N3\Framework\Infrastructure\Configuration\Provider\ConfigurationProvider;
+use Acquia\N3\Framework\Infrastructure\Database\Provider\DatabaseProvider;
+use Acquia\N3\Framework\Infrastructure\Event\Provider\EventBusProvider;
+use Acquia\N3\Framework\Infrastructure\Http\Provider\HttpServiceProvider;
+use Acquia\N3\Framework\Infrastructure\Logger\Provider\BugsnagProvider;
+use Acquia\N3\Framework\Infrastructure\Logger\Provider\LoggerProvider;
+use Acquia\N3\Types\Uuid;
+use League\Container\Container;
 use Symfony\Component\Debug\Debug;
-use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\HttpFoundation\Request;
+use Zend\Diactoros\Response\SapiEmitter;
 
-require __DIR__ . '/../vendor/autoload.php';
+$config_path = __DIR__ . '/../config';
 
-// The check is to ensure we don't use .env in production
-if (!isset($_SERVER['APP_ENV'])) {
-    if (!class_exists(Dotenv::class)) {
-        throw new \RuntimeException('APP_ENV environment variable is not defined. You need to define environment variables for configuration or add "symfony/dotenv" as a Composer dependency to load variables from a .env file.');
-    }
-    (new Dotenv())->load(__DIR__ . '/../.env');
+// Create container and register services.
+$container = new Container();
+$container->addServiceProvider(new ConfigurationDefinitionProvider());
+$container->addServiceProvider(new ConfigurationProvider(configuration_files($config_path)));
+
+$container->addServiceProvider(new EventBusProvider());
+$container->addServiceProvider(new CommandHandlerProvider());
+$container->addServiceProvider(new CommandBusProvider());
+
+// Retrieve configuration.
+$config      = $container->get('config');
+$app_name    = $config->getByKey('name')->getData();
+$env_name    = $config->getByKey('environment')->getData();
+$api_version = $config->getByKey('version')->getData();
+$debug       = (bool) $config->getByKey('debug')->getData();
+$database    = $config->getByKey('database')->getData();
+
+// Add service providers that depend on configuration.
+if ($config->getByKey('bugsnag.enabled')->getData()) {
+    $bugsnag_key = $config->getByKey('bugsnag.key')->getData();
+    $container->addServiceProvider(new BugsnagProvider($env_name, $bugsnag_key));
 }
 
-$env   = $_SERVER['APP_ENV'] ?? 'dev';
-$debug = (bool) ($_SERVER['APP_DEBUG'] ?? ('prod' !== $env));
+$container->addServiceProvider(new DatabaseProvider($database['dsn'], $database['user'], $database['password']));
+$container->addServiceProvider(new LoggerProvider($app_name, $env_name, $debug));
+$container->addServiceProvider(new HttpServiceProvider($config_path, $api_version));
 
-if ($debug) {
-    umask(0000);
 
-    Debug::enable();
-}
+// Handle the request.
+$request = JsonServerRequestFactory::fromGlobals();
+$request = $request->withAttribute('request_id', (string) Uuid::create());
 
-if ($trustedProxies = $_SERVER['TRUSTED_PROXIES'] ?? false) {
-    Request::setTrustedProxies(explode(',', $trustedProxies), Request::HEADER_X_FORWARDED_ALL ^ Request::HEADER_X_FORWARDED_HOST);
-}
-
-if ($trustedHosts = $_SERVER['TRUSTED_HOSTS'] ?? false) {
-    Request::setTrustedHosts(explode(',', $trustedHosts));
-}
-
-$kernel   = new Kernel($env, $debug);
-$request  = Request::createFromGlobals();
+/** @var Kernel $kernel */
+$kernel   = $container->get('http.kernel');
 $response = $kernel->handle($request);
-$response->send();
-$kernel->terminate($request, $response);
+
+/** @var SapiEmitter $emitter */
+$emitter = $container->get('http.emitter');
+$emitter->emit($response);
+
+/**
+ * Retrieves a list of configuration files.
+ *
+ * @param string $config_path
+ *   The path to the configuration directory.
+ *
+ * @return string[]
+ *   A list of paths to available configuration files.
+ *
+ */
+function configuration_files(string $config_path): array
+{
+    $local_config = $config_path . '/config.local.yaml';
+    $paths[]      = $config_path . '/config.default.yaml';
+
+    if (is_file($local_config)) {
+        $paths[] = $local_config;
+    }
+
+    return $paths;
+}
