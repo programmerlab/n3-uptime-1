@@ -1,0 +1,9 @@
+root.get.v1:
+    path: /
+    controller: resource.root:get
+    methods: [GET]
+    options:
+        stability: stable
+        deprecated: []
+        version: 1
+

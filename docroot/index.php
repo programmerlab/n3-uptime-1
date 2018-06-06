@@ -17,7 +17,6 @@ use Acquia\N3\Framework\Infrastructure\Logger\Provider\BugsnagProvider;
 use Acquia\N3\Framework\Infrastructure\Logger\Provider\LoggerProvider;
 use Acquia\N3\Types\Uuid;
 use League\Container\Container;
-use Symfony\Component\Debug\Debug;
 use Symfony\Component\HttpFoundation\Request;
 use Zend\Diactoros\Response\SapiEmitter;
 

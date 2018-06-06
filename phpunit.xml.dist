@@ -2,6 +2,9 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/5.7/phpunit.xsd"
          bootstrap="./vendor/autoload.php">
+    <php>
+        <env name="N3_DEMO_CONFIG_PATH" value="./config"/>
+    </php>
     <testsuites>
         <testsuite name="n3-uptime">
             <directory>./tests</directory>

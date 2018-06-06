@@ -33,7 +33,7 @@ Username: DB Username
 Password: DB Password
 
 ## Import schema into n3uptimev2 database
-The database SQL file is available under "n3-uptime/db/" folder.
+The database SQL file is available under "n3-uptime/config/" folder.
 Import or execute the SQL file under n3uptimev2 database.
 
 ## Import using MySQL CLI
@@ -42,7 +42,7 @@ Command to import:
 
 ```sh
 cd <projectRootDirectory>
-mysql -u <user> -p -h <host> <db> < db/2018_05_10_n3uptime2.sql
+mysql -u <user> -p -h <host> <db> < config/schema.sql
 ```
 
 
