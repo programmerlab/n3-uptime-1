@@ -7,7 +7,7 @@ namespace Acquia\N3\Uptime\Scanner\Domain;
 use Acquia\N3\Domain\RepositoryInterface;
 
 /**
- * Defines a repository for retrieving domains.
+ * Defines a repository for retrieving scanner.
  *
  */
 interface ScannerRepositoryInterface extends RepositoryInterface

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Acquia\N3\Uptime\Scanner\Domain\Event;
+namespace Acquia\N3\Uptime\Scanner\Application\Command;
 
-use Acquia\N3\Domain\AbstractEvent;
+use Acquia\N3\Application\Command\AbstractCommand;
 use Acquia\N3\Uptime\Scanner\Domain\DomainName;
 
 /**
- * Records that a host status was disable.
+ * Disables a domain status.
  *
  */
-class DomainDisabledEvent extends AbstractEvent
+class DisableDomainCommand extends AbstractCommand
 {
     /**
      * The domain name.
@@ -26,18 +26,17 @@ class DomainDisabledEvent extends AbstractEvent
      * Constructor.
      *
      * @param DomainName $domain_name
-     *   The Domain name.
+     *   The domain name.
      *
      */
     public function __construct(DomainName $domain_name)
     {
-        parent::__construct();
         $this->domain_name = $domain_name;
     }
 
 
     /**
-     * Retrieves the domain name.
+     * Retrieves the domain name object.
      *
      * @return DomainName
      *

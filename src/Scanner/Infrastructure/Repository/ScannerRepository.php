@@ -16,7 +16,7 @@ use Acquia\N3\Uptime\Scanner\Domain\ScannerRepositoryInterface;
 class ScannerRepository extends AbstractDatabaseAwareRepository implements ScannerRepositoryInterface
 {
     /**
-     * Get a Scanner object by domain name.
+     * Get a Scanner object by domain name
      *
      * @param DomainName $domain_name as String
      *   The event recording the domain name.
@@ -42,9 +42,8 @@ class ScannerRepository extends AbstractDatabaseAwareRepository implements Scann
         if (!$result) {
             return null;
         }
-
         $domain = [
-            'domain_name' => $result['domain'],
+            'domain_name' => new DomainName($result['domain']),
             'status'      => (bool) $result['status'],
         ];
 

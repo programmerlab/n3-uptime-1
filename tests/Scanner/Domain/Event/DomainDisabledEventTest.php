@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Acquia\N3\Uptime\Scanner\Domain\Event;
+namespace Acquia\N3\Uptime\Test\Scanner\Domain\Event;
 
 use Acquia\N3\Domain\EventInterface;
 use Acquia\N3\Uptime\Scanner\Domain\DomainName;
+use Acquia\N3\Uptime\Scanner\Domain\Event\DomainDisabledEvent;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,7 +23,6 @@ class DomainDisabledEventTest extends TestCase
     {
         $domain_name = new DomainName('example.com');
         $event       = new DomainDisabledEvent($domain_name);
-
         $this->assertInstanceOf(EventInterface::class, $event);
     }
 
@@ -35,7 +35,6 @@ class DomainDisabledEventTest extends TestCase
     {
         $domain_name = new DomainName('example.com');
         $event       = new DomainDisabledEvent($domain_name);
-
         $this->assertEquals($domain_name, $event->getDomainName());
     }
 }

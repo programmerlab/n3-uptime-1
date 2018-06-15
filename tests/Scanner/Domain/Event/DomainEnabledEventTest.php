@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Acquia\N3\Uptime\Scanner\Domain\Event;
+namespace Acquia\N3\Uptime\Test\Scanner\Domain\Event;
 
 use Acquia\N3\Domain\EventInterface;
 use Acquia\N3\Uptime\Scanner\Domain\DomainName;
+use Acquia\N3\Uptime\Scanner\Domain\Event\DomainEnabledEvent;
 use PHPUnit\Framework\TestCase;
 
 /**

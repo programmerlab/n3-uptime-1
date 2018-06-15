@@ -16,6 +16,7 @@ use Acquia\N3\Framework\Infrastructure\Http\Provider\HttpServiceProvider;
 use Acquia\N3\Framework\Infrastructure\Logger\Provider\BugsnagProvider;
 use Acquia\N3\Framework\Infrastructure\Logger\Provider\LoggerProvider;
 use Acquia\N3\Types\Uuid;
+use Acquia\N3\Uptime\Scanner\Infrastructure\Repository\Provider\RepositoryProvider;
 use League\Container\Container;
 use Symfony\Component\HttpFoundation\Request;
 use Zend\Diactoros\Response\SapiEmitter;
@@ -48,7 +49,7 @@ if ($config->getByKey('bugsnag.enabled')->getData()) {
 $container->addServiceProvider(new DatabaseProvider($database['dsn'], $database['user'], $database['password']));
 $container->addServiceProvider(new LoggerProvider($app_name, $env_name, $debug));
 $container->addServiceProvider(new HttpServiceProvider($config_path, $api_version));
-
+$container->addServiceProvider(new RepositoryProvider());
 
 // Handle the request.
 $request = JsonServerRequestFactory::fromGlobals();

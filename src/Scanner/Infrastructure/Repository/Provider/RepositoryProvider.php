@@ -9,7 +9,7 @@ use Acquia\N3\Uptime\Scanner\Infrastructure\Repository\ScannerUpdateHandler;
 use League\Container\ServiceProvider\AbstractServiceProvider;
 
 /**
- * Provides repositories related to Scanner.
+ * Provides repositories related to scanner.
  *
  */
 class RepositoryProvider extends AbstractServiceProvider

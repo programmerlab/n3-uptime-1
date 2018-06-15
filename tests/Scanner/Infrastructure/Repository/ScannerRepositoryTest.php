@@ -25,21 +25,20 @@ class ScannerRepositoryTest extends TestCase
     public function testGetByDomainName(): void
     {
         $domain_name = new DomainName('example.com');
-        $status      = true;
-
-        $db        = $this->createMock(\PDO::class);
-        $event_bus = $this->createMock(EventBusInterface::class);
-        $handler   = $this->createMock(ScannerUpdateHandler::class);
-        $logger    = $this->createMock(LoggerInterface::class);
-        $stmt      = $this->createMock(\PDOStatement::class);
+        $status      = 1;
+        $db          = $this->createMock(\PDO::class);
+        $event_bus   = $this->createMock(EventBusInterface::class);
+        $handler     = $this->createMock(ScannerUpdateHandler::class);
+        $logger      = $this->createMock(LoggerInterface::class);
+        $stmt        = $this->createMock(\PDOStatement::class);
 
         $db->method('prepare')
             ->willReturn($stmt);
 
         $stmt->method('fetch')
             ->willReturn([
-                'domain' => (string) $domain_name,
-                'status' => $status,
+                'domain'  => (string) $domain_name,
+                'status'  => (bool) $status,
             ]);
 
         $scan_repo    = new ScannerRepository($db, $event_bus, $handler, $logger);
@@ -47,5 +46,26 @@ class ScannerRepositoryTest extends TestCase
 
         $this->assertInstanceOf(Scanner::class, $scanner);
         $this->assertEquals($domain_name, $scanner->toArray()['domain_name']);
+    }
+
+    /**
+     * Ensures getByDomainName() returns null if the domain name cannot be found.
+     *
+     */
+    public function testGetByDomainNameReturnsNullForMissingDomain(): void
+    {
+        $domain_name = new DomainName('example.com');
+        $db          = $this->createMock(\PDO::class);
+        $event_bus   = $this->createMock(EventBusInterface::class);
+        $handler     = $this->createMock(ScannerUpdateHandler::class);
+        $logger      = $this->createMock(LoggerInterface::class);
+        $stmt        = $this->createMock(\PDOStatement::class);
+
+        $db->method('prepare')
+            ->willReturn($stmt);
+
+        $scanner_repo = new ScannerRepository($db, $event_bus, $handler, $logger);
+        $scanner      = $scanner_repo->getByDomainName($domain_name);
+        $this->assertNull($scanner);
     }
 }
