@@ -7,8 +7,6 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Acquia\N3\Configuration\Provider\ConfigurationDefinitionProvider;
 use Acquia\N3\Framework\Application\Http\JsonServerRequestFactory;
 use Acquia\N3\Framework\Application\Http\Kernel;
-use Acquia\N3\Framework\Infrastructure\Command\Provider\CommandBusProvider;
-use Acquia\N3\Framework\Infrastructure\Command\Provider\CommandHandlerProvider;
 use Acquia\N3\Framework\Infrastructure\Configuration\Provider\ConfigurationProvider;
 use Acquia\N3\Framework\Infrastructure\Database\Provider\DatabaseProvider;
 use Acquia\N3\Framework\Infrastructure\Event\Provider\EventBusProvider;
@@ -16,6 +14,9 @@ use Acquia\N3\Framework\Infrastructure\Http\Provider\HttpServiceProvider;
 use Acquia\N3\Framework\Infrastructure\Logger\Provider\BugsnagProvider;
 use Acquia\N3\Framework\Infrastructure\Logger\Provider\LoggerProvider;
 use Acquia\N3\Types\Uuid;
+use Acquia\N3\Uptime\Api\Infrastructure\Resource\Provider\ResourceProvider;
+use Acquia\N3\Uptime\Scanner\Infrastructure\Command\Provider\CommandBusProvider;
+use Acquia\N3\Uptime\Scanner\Infrastructure\Command\Provider\CommandHandlerProvider;
 use Acquia\N3\Uptime\Scanner\Infrastructure\Repository\Provider\RepositoryProvider;
 use League\Container\Container;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,6 +32,7 @@ $container->addServiceProvider(new ConfigurationProvider(configuration_files($co
 $container->addServiceProvider(new EventBusProvider());
 $container->addServiceProvider(new CommandHandlerProvider());
 $container->addServiceProvider(new CommandBusProvider());
+$container->addServiceProvider(new RepositoryProvider());
 
 // Retrieve configuration.
 $config      = $container->get('config');
@@ -49,7 +51,8 @@ if ($config->getByKey('bugsnag.enabled')->getData()) {
 $container->addServiceProvider(new DatabaseProvider($database['dsn'], $database['user'], $database['password']));
 $container->addServiceProvider(new LoggerProvider($app_name, $env_name, $debug));
 $container->addServiceProvider(new HttpServiceProvider($config_path, $api_version));
-$container->addServiceProvider(new RepositoryProvider());
+$container->addServiceProvider(new ResourceProvider($app_name, $api_version));
+
 
 // Handle the request.
 $request = JsonServerRequestFactory::fromGlobals();

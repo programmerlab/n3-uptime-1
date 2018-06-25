@@ -28,6 +28,7 @@ class ResourceProviderTest extends TestCase
         $base_uri  = '/';
 
         $command_bus = $this->createMock(CommandBusInterface::class);
+
         $container->add('command.bus', function () use ($command_bus) {
             return $command_bus;
         });
@@ -36,13 +37,11 @@ class ResourceProviderTest extends TestCase
         $container->addServiceProvider($provider);
 
         [$service, $method] = explode(':', $route_controller);
-
         $this->assertTrue($container->has($service));
 
         $resource = $container->get($service);
         $this->assertTrue(method_exists($resource, $method));
     }
-
 
     /**
      * Provides the list of route controllers to test.
@@ -50,11 +49,13 @@ class ResourceProviderTest extends TestCase
      */
     public function routeProvider(): array
     {
-        // The phpunit.xml file should have defined an N3_DEMO_CONFIG_PATH
+        // The phpunit.xml file should have defined an N3_UPTIME_CONFIG_PATH
         // environment variable that is relative to the working directory.
+
+
         $routes_path = implode('/', [
             getcwd(),
-            $_ENV['N3_DEMO_CONFIG_PATH'],
+            $_ENV['N3_UPTIME_CONFIG_PATH'],
             'routes.yaml',
         ]);
 

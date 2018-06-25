@@ -7,3 +7,10 @@ root.get.v1:
         deprecated: []
         version: 1
 
+domains.domain.enable.post.v1:
+    path: /domains/{domain}/actions/enable
+    controller: resource.domains.domain.enable:post
+    options:
+          stability: stable
+          deprecated: []
+          version: 1
