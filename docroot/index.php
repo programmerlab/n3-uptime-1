@@ -19,7 +19,6 @@ use Acquia\N3\Uptime\Scanner\Infrastructure\Command\Provider\CommandBusProvider;
 use Acquia\N3\Uptime\Scanner\Infrastructure\Command\Provider\CommandHandlerProvider;
 use Acquia\N3\Uptime\Scanner\Infrastructure\Repository\Provider\RepositoryProvider;
 use League\Container\Container;
-use Symfony\Component\HttpFoundation\Request;
 use Zend\Diactoros\Response\SapiEmitter;
 
 $config_path = __DIR__ . '/../config';
@@ -39,6 +38,7 @@ $config      = $container->get('config');
 $app_name    = $config->getByKey('name')->getData();
 $env_name    = $config->getByKey('environment')->getData();
 $api_version = $config->getByKey('version')->getData();
+$base_uri    = $config->getByKey('base_uri')->getData();
 $debug       = (bool) $config->getByKey('debug')->getData();
 $database    = $config->getByKey('database')->getData();
 
@@ -50,8 +50,8 @@ if ($config->getByKey('bugsnag.enabled')->getData()) {
 
 $container->addServiceProvider(new DatabaseProvider($database['dsn'], $database['user'], $database['password']));
 $container->addServiceProvider(new LoggerProvider($app_name, $env_name, $debug));
-$container->addServiceProvider(new HttpServiceProvider($config_path, $api_version));
-$container->addServiceProvider(new ResourceProvider($app_name, $api_version));
+$container->addServiceProvider(new HttpServiceProvider($config_path, $base_uri, $api_version));
+$container->addServiceProvider(new ResourceProvider($base_uri));
 
 
 // Handle the request.

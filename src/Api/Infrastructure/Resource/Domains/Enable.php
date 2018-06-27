@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Acquia\N3\Uptime\Api\Infrastructure\Resource\Domains;
 
 use Acquia\N3\Application\Command\Bus\CommandBusInterface;
+use Acquia\N3\Framework\Application\Resource\AbstractResource;
 use Acquia\N3\Framework\Application\Resource\HalDocument;
 use Acquia\N3\Framework\Application\Resource\ResponseFactory;
-use Acquia\N3\Framework\Infrastructure\Resource\AbstractResource;
 use Acquia\N3\Uptime\Scanner\Application\Command\EnableDomainCommand;
 use Acquia\N3\Uptime\Scanner\Domain\DomainName;
 use Psr\Http\Message\ResponseInterface;

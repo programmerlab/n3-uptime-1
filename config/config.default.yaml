@@ -29,6 +29,13 @@ config:
         data: 1
 
     #
+    # The base path of the API.
+    #
+    base_uri:
+        type: scalar
+        data: /
+
+    #
     # Enable debug mode.
     #
     # Debug mode will increase logging in the application, exposing all log
