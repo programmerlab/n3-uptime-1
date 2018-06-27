@@ -10,6 +10,11 @@ php:
   - 7.1
   - 7.2
 
+install:
+  - nvm install 8.10 && nvm use 8.10
+  - npm --version
+  - node --version
+
 before_install:
   - phpenv config-rm xdebug.ini
 

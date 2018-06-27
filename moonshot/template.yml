@@ -591,7 +591,7 @@ Resources:
         FromPort: "-1"
         ToPort: "-1"
         CidrIp: 0.0.0.0/0 
-
+        
   #
   # Define the AWS::RDS::DBSubnetGroup type creates an RDS database subnet group. 
   # Subnet groups must contain at least two subnets in two different Availability Zones in the same region. 
