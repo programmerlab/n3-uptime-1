@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Acquia\N3\Uptime\Scanner\Application\Command;
 
 /**
- * Disables a domain status.
+ * Delete Domain.
  *
  */
-class DisableDomainCommand extends AbstractDomainCommand
+class DeleteDomainCommand extends AbstractDomainCommand
 {
 }

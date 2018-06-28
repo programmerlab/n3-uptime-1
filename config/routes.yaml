@@ -7,6 +7,15 @@ root.get.v1:
         deprecated: []
         version: 1
 
+domains.domain.delete.v1:    
+    path: /domains/{domain}
+    controller: resource.domains.domain:delete
+    methods: [DELETE]
+    options:
+        stability: stable
+        deprecated: []
+        version: 1
+
 domains.domain.enable.post.v1:
     path: /domains/{domain}/actions/enable
     controller: resource.domains.domain.enable:post

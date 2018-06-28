@@ -48,6 +48,7 @@ class ScannerRepositoryTest extends TestCase
         $this->assertEquals($domain_name, $scanner->toArray()['domain_name']);
     }
 
+
     /**
      * Ensures getByDomainName() returns null if the domain name cannot be found.
      *

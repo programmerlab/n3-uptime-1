@@ -22,6 +22,7 @@ class CommandBusProvider extends AbstractServiceProvider
         'command.bus',
     ];
 
+
     /**
      * {@inheritdoc}
      *
@@ -32,6 +33,7 @@ class CommandBusProvider extends AbstractServiceProvider
 
         $container->share('command.bus', function () use ($container) {
             $handlers = [
+                'DeleteDomainCommand' => $container->get('delete.domain.handler'),
                 'EnableDomainCommand' => $container->get('enable.domain.handler'),
             ];
 

@@ -50,6 +50,7 @@ if ($config->getByKey('bugsnag.enabled')->getData()) {
 
 $container->addServiceProvider(new DatabaseProvider($database['dsn'], $database['user'], $database['password']));
 $container->addServiceProvider(new LoggerProvider($app_name, $env_name, $debug));
+
 $container->addServiceProvider(new HttpServiceProvider($config_path, $base_uri, $api_version));
 $container->addServiceProvider(new ResourceProvider($base_uri));
 

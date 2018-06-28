@@ -21,3 +21,6 @@
 
 #Ignore node modules from lambda functions
 /lambda_functions/scanner/node_modules/
+
+# Ignore local configuration
+/config/config.local.yaml

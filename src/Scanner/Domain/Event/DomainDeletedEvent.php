@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Acquia\N3\Uptime\Scanner\Domain\Event;
 
 /**
- * Records that a host status was disable.
+ * Records that a domain deleted.
  *
  */
-class DomainDisabledEvent extends AbstractDomainEvent
+class DomainDeletedEvent extends AbstractDomainEvent
 {
 }
