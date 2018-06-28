@@ -721,6 +721,7 @@ Resources:
       UserData:
         Fn::Base64:
           Fn::Join:
+          Fn::Sub:
           - "\n"
           - - "#!/bin/bash -v"
             - sudo apt-get -y update
@@ -731,8 +732,8 @@ Resources:
             - rm /tmp/install.sh
             - sudo service apache2 restart
             - sudo service codedeploy-agent restart
-
-  #
+            - export DB_HOSTNAME=$(!GetAtt RDSCluster.EndpointAddress)
+  #     
   # Auto-scaling application resources
   #
   # These resources define how resources that scale based on usage are created
