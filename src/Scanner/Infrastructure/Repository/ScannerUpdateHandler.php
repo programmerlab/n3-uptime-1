@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Acquia\N3\Uptime\Scanner\Infrastructure\Repository;
 
 use Acquia\N3\Framework\Infrastructure\Repository\AbstractUpdateHandler;
+use Acquia\N3\Uptime\Scanner\Domain\Event\DomainCreatedEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainDeletedEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainDisabledEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainEnabledEvent;
@@ -66,6 +67,30 @@ class ScannerUpdateHandler extends AbstractUpdateHandler
         ]);
     }
 
+    /**
+     * Creates a new domain.
+     *
+     * @param DomainDisableEvent $event
+     *
+     * @return void
+     *
+     */
+    public function onDomainCreated(DomainCreatedEvent $event): void
+    {
+        $sql = '
+            INSERT INTO domains
+            (domain, expected_status, status, created)
+            VALUES
+            (:domain_name, :expected_status, 1, :created)
+        ';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':domain_name'     => (string) $event->getDomainName(),
+            ':expected_status' => $event->getExpectedStatus(),
+            ':created'         => time(),
+        ]);
+    }
 
     /**
      * Delete domain from scanner.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Acquia\N3\Uptime\Test\Scanner\Infrastructure\Repository;
 
 use Acquia\N3\Uptime\Scanner\Domain\DomainName;
+use Acquia\N3\Uptime\Scanner\Domain\Event\DomainCreatedEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainDeletedEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainDisabledEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainEnabledEvent;
@@ -80,6 +81,32 @@ class ScannerUpdateHandlerTest extends TestCase
 
         $event   = new DomainDisabledEvent($domain_name);
 
+        $handler->handle($event);
+    }
+
+    /**
+     * Ensures that create domain works as expected.
+     *
+     */
+    public function testOnDomainCreate(): void
+    {
+        $domain_name = new DomainName('example.com');
+
+        $db   = $this->createMock(\PDO::class);
+        $stmt = $this->createMock(\PDOStatement::class);
+
+        $db->method('prepare')
+            ->willReturn($stmt);
+
+        $stmt->expects($this->once())
+            ->method('execute');
+
+        $expectd_status = 200;
+        $status         = 1;
+        $created_date   = time();
+
+        $handler = new ScannerUpdateHandler($db);
+        $event   = new DomainCreatedEvent($domain_name, $expectd_status, $status, $created_date);
         $handler->handle($event);
     }
 }

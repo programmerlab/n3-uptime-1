@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Acquia\N3\Uptime\Test\Scanner\Domain;
 
 use Acquia\N3\Uptime\Scanner\Domain\DomainName;
+use Acquia\N3\Uptime\Scanner\Domain\Event\DomainCreatedEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainDeletedEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainDisabledEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainEnabledEvent;
@@ -59,6 +60,7 @@ class ScannerTest extends TestCase
 
         $scanner->enableDomain();
     }
+
 
     /**
      * Ensures that DisableDomain works as expected.
@@ -121,6 +123,23 @@ class ScannerTest extends TestCase
 
         $this->assertFalse($scanner->isEqualTo($other_scanner));
     }
+
+
+    /**
+     * Ensures that CreateDomain works as expected.
+     *
+     */
+    public function testCreateDomain(): void
+    {
+        $domain_name = new DomainName('acquia.com');
+        $scanner     = Scanner::addDomain($domain_name, 200);
+        $events      = $scanner->getEvents();
+        $this->assertInstanceOf(Scanner::class, $scanner);
+        $this->assertCount(1, $events);
+        $this->assertInstanceOf(DomainCreatedEvent::class, $events[0]);
+    }
+
+
     /**
      * Ensures that DeleteDomain works as expected.
      *

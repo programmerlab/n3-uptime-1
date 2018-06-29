@@ -7,6 +7,11 @@ root.get.v1:
         deprecated: []
         version: 1
 
+domains.post.v1:
+    path: /domains
+    controller: resource.domains:post
+    methods: [POST]
+
 domains.domain.delete.v1:    
     path: /domains/{domain}
     controller: resource.domains.domain:delete

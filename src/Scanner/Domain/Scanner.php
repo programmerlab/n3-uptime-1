@@ -7,6 +7,7 @@ namespace Acquia\N3\Uptime\Scanner\Domain;
 use Acquia\N3\Domain\AbstractEntity;
 use Acquia\N3\Domain\EntityInterface;
 use Acquia\N3\Domain\Exceptions\ValidationException;
+use Acquia\N3\Uptime\Scanner\Domain\Event\DomainCreatedEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainDeletedEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainDisabledEvent;
 use Acquia\N3\Uptime\Scanner\Domain\Event\DomainEnabledEvent;
@@ -102,6 +103,27 @@ class Scanner extends AbstractEntity
     }
 
     /**
+     * Create a domain.
+     *
+     * @param DomainName $domain_name
+     *   The domain name.
+     * @param int $expected_status
+     *   The Expected status code.
+     *
+     * @return Scanner
+     *   The new scanner entity.
+     *
+     */
+    public static function addDomain(DomainName $domain_name, int $expected_status): Scanner
+    {
+        $domain = new static($domain_name, true);
+        $domain->raise(new DomainCreatedEvent($domain_name, $expected_status));
+
+        return $domain;
+    }
+
+
+    /**
      * Delete the domain.
      *
      * @param DomainName $domain_name
@@ -114,6 +136,7 @@ class Scanner extends AbstractEntity
     {
         $this->raise(new DomainDeletedEvent($this->domain_name));
     }
+
 
     /**
      * {@inheritdoc}

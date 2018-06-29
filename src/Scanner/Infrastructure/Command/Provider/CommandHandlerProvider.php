@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Acquia\N3\Uptime\Scanner\Infrastructure\Command\Provider;
 
+use Acquia\N3\Uptime\Scanner\Application\Command\Handler\CreateDomainHandler;
 use Acquia\N3\Uptime\Scanner\Application\Command\Handler\DeleteDomainHandler;
 use Acquia\N3\Uptime\Scanner\Application\Command\Handler\EnableDomainHandler;
-
 use League\Container\ServiceProvider\AbstractServiceProvider;
 
 /**
@@ -22,7 +22,9 @@ class CommandHandlerProvider extends AbstractServiceProvider
     protected $provides = [
         'delete.domain.handler',
         'enable.domain.handler',
+        'create.domain.handler',
     ];
+
 
     /**
      * {@inheritdoc}
@@ -31,6 +33,10 @@ class CommandHandlerProvider extends AbstractServiceProvider
     public function register()
     {
         $container = $this->getContainer();
+
+        $container->share('create.domain.handler', CreateDomainHandler::class)
+            ->withArguments(['scanner.repository']);
+
         $container->share('delete.domain.handler', DeleteDomainHandler::class)
             ->withArguments(['scanner.repository']);
 
