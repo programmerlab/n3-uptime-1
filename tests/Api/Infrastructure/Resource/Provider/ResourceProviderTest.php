@@ -52,7 +52,6 @@ class ResourceProviderTest extends TestCase
         // The phpunit.xml file should have defined an N3_UPTIME_CONFIG_PATH
         // environment variable that is relative to the working directory.
 
-
         $routes_path = implode('/', [
             getcwd(),
             $_ENV['N3_UPTIME_CONFIG_PATH'],

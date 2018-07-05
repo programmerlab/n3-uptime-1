@@ -21,9 +21,19 @@ domains.domain.delete.v1:
         deprecated: []
         version: 1
 
+domains.domain.disable.post.v1:
+    path: /domains/{domain}/actions/disable
+    controller: resource.domains.domain.disable:post
+    methods: [POST]
+    options:
+          stability: stable
+          deprecated: []
+          version: 1
+
 domains.domain.enable.post.v1:
     path: /domains/{domain}/actions/enable
     controller: resource.domains.domain.enable:post
+    methods: [POST]
     options:
           stability: stable
           deprecated: []

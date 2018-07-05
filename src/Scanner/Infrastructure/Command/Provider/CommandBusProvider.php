@@ -33,9 +33,10 @@ class CommandBusProvider extends AbstractServiceProvider
 
         $container->share('command.bus', function () use ($container) {
             $handlers = [
-                'CreateDomainCommand' => $container->get('create.domain.handler'),
-                'DeleteDomainCommand' => $container->get('delete.domain.handler'),
-                'EnableDomainCommand' => $container->get('enable.domain.handler'),
+                'CreateDomainCommand'  => $container->get('create.domain.handler'),
+                'DeleteDomainCommand'  => $container->get('delete.domain.handler'),
+                'EnableDomainCommand'  => $container->get('enable.domain.handler'),
+                'DisableDomainCommand' => $container->get('disable.domain.handler'),
             ];
 
             $locator = new HandlerLocator($handlers);

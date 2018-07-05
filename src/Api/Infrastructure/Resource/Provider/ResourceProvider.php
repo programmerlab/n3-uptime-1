@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Acquia\N3\Uptime\Api\Infrastructure\Resource\Provider;
 
 use Acquia\N3\Uptime\Api\Infrastructure\Resource\Domains;
+use Acquia\N3\Uptime\Api\Infrastructure\Resource\Domains\Disable;
 use Acquia\N3\Uptime\Api\Infrastructure\Resource\Domains\Domain;
 use Acquia\N3\Uptime\Api\Infrastructure\Resource\Domains\Enable;
 use Acquia\N3\Uptime\Api\Infrastructure\Resource\Root;
@@ -24,6 +25,7 @@ class ResourceProvider extends AbstractServiceProvider
         'resource.root',
         'resource.domains',
         'resource.domains.domain',
+        'resource.domains.domain.disable',
         'resource.domains.domain.enable',
     ];
 
@@ -69,6 +71,12 @@ class ResourceProvider extends AbstractServiceProvider
             $command_bus = $container->get('command.bus');
 
             return new Domain($this->base_uri, $command_bus);
+        });
+
+        $container->share('resource.domains.domain.disable', function () use ($container) {
+            $command_bus = $container->get('command.bus');
+
+            return new Disable($this->base_uri, $command_bus);
         });
 
         $container->share('resource.domains.domain.enable', function () use ($container) {
