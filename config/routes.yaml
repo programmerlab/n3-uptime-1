@@ -38,3 +38,12 @@ domains.domain.enable.post.v1:
           stability: stable
           deprecated: []
           version: 1
+
+domains.domain.get.v1:
+    path: /domains/{domain}
+    controller: resource.domains.domain:get
+    methods: [GET]
+    options:
+        stability: stable
+        deprecated: []
+        version: 1

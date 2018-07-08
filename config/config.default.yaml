@@ -13,7 +13,13 @@ config:
     name:
         type: scalar
         data: n3-uptime
-
+    
+    #
+    # Base End point name.
+    #
+    base_uri:
+        type: scalar
+        data: /
     #
     # Environment name.
     #

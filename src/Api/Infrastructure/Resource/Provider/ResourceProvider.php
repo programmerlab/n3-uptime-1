@@ -29,6 +29,7 @@ class ResourceProvider extends AbstractServiceProvider
         'resource.domains.domain.enable',
     ];
 
+
     /**
      * The base path of the API.
      *
@@ -36,6 +37,7 @@ class ResourceProvider extends AbstractServiceProvider
      *
      */
     protected $base_uri;
+
 
     /**
      * Constructor.
@@ -68,9 +70,10 @@ class ResourceProvider extends AbstractServiceProvider
         });
 
         $container->share('resource.domains.domain', function () use ($container) {
+            $finder      = $container->get('domain.finder');
             $command_bus = $container->get('command.bus');
 
-            return new Domain($this->base_uri, $command_bus);
+            return new Domain($this->base_uri, $finder, $command_bus);
         });
 
         $container->share('resource.domains.domain.disable', function () use ($container) {

@@ -17,6 +17,7 @@ use Acquia\N3\Types\Uuid;
 use Acquia\N3\Uptime\Api\Infrastructure\Resource\Provider\ResourceProvider;
 use Acquia\N3\Uptime\Scanner\Infrastructure\Command\Provider\CommandBusProvider;
 use Acquia\N3\Uptime\Scanner\Infrastructure\Command\Provider\CommandHandlerProvider;
+use Acquia\N3\Uptime\Scanner\Infrastructure\Finder\Provider\FinderProvider;
 use Acquia\N3\Uptime\Scanner\Infrastructure\Repository\Provider\RepositoryProvider;
 use League\Container\Container;
 use Zend\Diactoros\Response\SapiEmitter;
@@ -29,6 +30,7 @@ $container->addServiceProvider(new ConfigurationDefinitionProvider());
 $container->addServiceProvider(new ConfigurationProvider(configuration_files($config_path)));
 
 $container->addServiceProvider(new EventBusProvider());
+$container->addServiceProvider(new FinderProvider());
 $container->addServiceProvider(new CommandHandlerProvider());
 $container->addServiceProvider(new CommandBusProvider());
 $container->addServiceProvider(new RepositoryProvider());
@@ -50,10 +52,8 @@ if ($config->getByKey('bugsnag.enabled')->getData()) {
 
 $container->addServiceProvider(new DatabaseProvider($database['dsn'], $database['user'], $database['password']));
 $container->addServiceProvider(new LoggerProvider($app_name, $env_name, $debug));
-
 $container->addServiceProvider(new HttpServiceProvider($config_path, $base_uri, $api_version));
 $container->addServiceProvider(new ResourceProvider($base_uri));
-
 
 // Handle the request.
 $request = JsonServerRequestFactory::fromGlobals();

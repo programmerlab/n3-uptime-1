@@ -6,6 +6,7 @@ namespace Acquia\N3\Uptime\Test\Api\Infrastructure\Resource\Provider;
 
 use Acquia\N3\Application\Command\Bus\CommandBusInterface;
 use Acquia\N3\Uptime\Api\Infrastructure\Resource\Provider\ResourceProvider;
+use Acquia\N3\Uptime\Scanner\Application\Finder\DomainFinderInterface;
 use League\Container\Container;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
@@ -27,7 +28,12 @@ class ResourceProviderTest extends TestCase
         $container = new Container();
         $base_uri  = '/';
 
-        $command_bus = $this->createMock(CommandBusInterface::class);
+        $domain_finder = $this->createMock(DomainFinderInterface::class);
+        $command_bus   = $this->createMock(CommandBusInterface::class);
+
+        $container->add('domain.finder', function () use ($domain_finder) {
+            return $domain_finder;
+        });
 
         $container->add('command.bus', function () use ($command_bus) {
             return $command_bus;
@@ -38,7 +44,6 @@ class ResourceProviderTest extends TestCase
 
         [$service, $method] = explode(':', $route_controller);
         $this->assertTrue($container->has($service));
-
         $resource = $container->get($service);
         $this->assertTrue(method_exists($resource, $method));
     }
